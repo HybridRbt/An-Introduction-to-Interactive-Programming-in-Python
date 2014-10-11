@@ -1,110 +1,115 @@
-# template for "Guess the number" mini-project
-# input will come from buttons and an input field
-# all output for the game will be printed in the console
+# template for "Stopwatch: The Game"
 import simplegui
-import random
-import math
 
-# initialize global variables used in your code
-secret_number = 0  # store the number generated
-choose_range = 100  # define the range
-guess = 0  # user guesses
-number_of_guesses_left = int(math.ceil(math.log(choose_range, 2)))
-number_of_guesses_used = 0
-
-# helper function to start and restart the game
-def new_game():
-    # :rtype : object
-
-    global secret_number
-    global number_of_guesses_left
-    global number_of_guesses_used
-
-    number_of_guesses_left = int(math.ceil(math.log(choose_range, 2)))
-    #print number_of_guesses_left   #for debug
-
-    number_of_guesses_used = 0
-
-    secret_number = random.randrange(0, choose_range)
-
-    #print secret_number    #for debug
-    print "New game. Range: 0 - " + str(choose_range) + "."
-    print "I am ready. Now you guess my secret number."
-    print "You have " + str(number_of_guesses_left) + " guesses left."
-    print ""  # print an empty line for better format
+# define global variables
+time = 0  # basic time counter
+is_running = False  # indicator of stopwatch status
+total_stops = 0  # counter of total stops
+good_stops = 0  # counter of good stops
 
 
-# define event handlers for control panel
-def range100():
-    # button that changes range to range [0,100) and restarts
-    global choose_range
+# define helper function format that converts time
+# in tenths of seconds into formatted string A:BC.D
+def format(t):
+    """format the time. return a string of format m:ss.ms"""
+    if t < 10:  # less than 1 sec
+        t_in_min = 0
+        t_in_sec = 0
+        t_in_tenth_sec = t
+    elif t < 600:  # less than 1 min
+        t_in_min = 0
+        t_in_sec = t / 10
+        t_in_tenth_sec = t % 10
+    else:  # larger than 1 min
+        t_in_min = t / 600
+        t_in_sec = (t - t_in_min * 600) / 10
+        t_in_tenth_sec = (t - t_in_min * 600) % 10
 
-    choose_range = 100
-    button_100.set_text('Range: 0 - 100 is chosen.')
-    button_1000.set_text('Range: 0 - 1000')
-    print "You have chosen Range: 0 - 100. Game will now restart. "
-    print ""  # print an empty line for better format
-    new_game()
-    #print choose_range  #for debug
-
-
-def range1000():
-    # button that changes range to range [0,1000) and restarts
-    global choose_range
-    choose_range = 1000
-
-    button_1000.set_text('Range: 0 - 1000 is chosen.')
-    button_100.set_text('Range: 0 - 100')
-    print "You have chosen Range: 0 - 1000. Game will now restart. "
-    print ""  # print an empty line for better format
-    new_game()
-    #print choose_range   #for debug
+    return str(t_in_min) + ":" + format_t_in_sec(t_in_sec) + "." + str(t_in_tenth_sec)
 
 
-def input_guess(guess):
-    # main game logic goes here	
-    global number_of_guesses_left
-    global number_of_guesses_used
-
-    print "Your guess is " + guess
-    # print secret_number #for debug
-
-    number_of_guesses_left -= 1
-    number_of_guesses_used += 1
-
-    if int(guess) == secret_number:
-        print "Correct! You got me in " + str(number_of_guesses_used) + " guesses. :)"
-        print "Game will now restart."
-        print ""  # print an empty line for better format
-        new_game()
+def format_t_in_sec(t_in_sec):
+    """format the time in sec. return a string of format ss"""
+    if t_in_sec < 10:
+        return "0" + str(t_in_sec)
     else:
-        if int(guess) > secret_number:
-            print "No, lower. "
-            print "You have " + str(number_of_guesses_left) + " guesses left. "
-            print ""  # print an empty line for better format
-        else:
-            print "No, higher. "
-            print "You have " + str(number_of_guesses_left) + " guesses left. "
-            print ""  # print an empty line for better format
-
-        if number_of_guesses_left == 0:
-            print "You failed to guess my secret number. The answer should be " + str(secret_number)
-            print "Game will now restart."
-            print ""  # print an empty line for better format
-            new_game()
-
-            # create frame
+        return str(t_in_sec)
 
 
-frame = simplegui.create_frame('Guess A Number', 100, 135)
+def format_stops():
+    """return a string of format x/y"""
+    return str(good_stops) + "/" + str(total_stops)
 
-# register event handlers for control elements
-button_100 = frame.add_button('Range: 0 - 100', range100, 200)
-button_1000 = frame.add_button('Range: 0 - 1000', range1000, 200)
-guess = frame.add_input('You guess:', input_guess, 150)
 
-# call new_game and start frame
-new_game()
+# define event handlers for buttons; "Start", "Stop", "Reset"
+def start_watch():
+    global is_running
+    timer.start()
+    is_running = True
+
+
+def stop_watch():
+    global is_running
+    global total_stops
+    global good_stops
+
+    timer.stop()
+    if is_running:
+        is_running = False
+
+        # count stops
+        total_stops += 1
+
+        # count good stops
+        if time % 10 == 0:
+            good_stops += 1
+
+
+def reset_watch():
+    global time
+    global total_stops
+    global good_stops
+    global is_running
+
+    # stop timer and change status
+    timer.stop()
+    is_running = False
+
+    # reset counters
+    total_stops = 0
+    good_stops = 0
+    time = 0
+
+
+# define event handler for timer with 0.1 sec interval
+def increment_time():
+    global time
+    time += 1
+
+    # works up to 10 mins. after that timer will stop
+    if time == 6000:
+        timer.stop()
+
+
+# define draw handler
+def draw_handler(canvas):
+    canvas.draw_text(format(time), (80, 95), 48, 'White')
+    canvas.draw_text(format_stops(), (10, 25), 24, 'Red')
+
+# create frame
+frame = simplegui.create_frame('Stopwatch', 300, 150)
+
+# create timer
+timer = simplegui.create_timer(100, increment_time)
+
+# register event handlers
+frame.set_draw_handler(draw_handler)
+
+start_button = frame.add_button('Start', start_watch, 200)
+stop_button = frame.add_button('Stop', stop_watch, 200)
+reset_button = frame.add_button('Reset', reset_watch, 200)
+
+# start frame
 frame.start()
 
-# always remember to check your completed program against the grading rubric
+# Please remember to review the grading rubric
