@@ -39,7 +39,7 @@ def draw(canvas):
     # update ball
 
     # draw ball
-
+    canvas.draw_circle(center_point, BALL_RADIUS, 10, "White", fill_color = "White")
     # update paddle's vertical position, keep paddle on the screen
 
     # draw paddles
